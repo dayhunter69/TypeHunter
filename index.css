@@ -1,0 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto&family=Roboto+Mono&display=swap"):
+;
+:root {
+  --textPrimary: #fff;
+  --textSecondary: #666;
+  --primaryColor: #e2b711;
+  --bgColor: #333437;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+  background-color: var(--bgColor);
+}
+
+main {
+  margin: 50px auto;
+}
+h1 {
+  color: #000000;
+}
+
+h1 svg {
+  width: 40px;
+  fill: var(--primaryColor);
+}
+
+#header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+#buttons {
+  text-align: right;
+}
+
+#info {
+  color: var(--primaryColor);
+}
+
+button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 0;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 5px 20px;
+  cursor: pointer;
+}
+div#game {
+  line-height: 35px;
+  height: 105px;
+  overflow: hidden;
+  position: relative;
+}
+
+#focus-error {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  padding-top: 35px;
+}
+
+#words {
+  filter: blur(5px);
+  color: var(--textSecondary);
+}
+
+#game:focus #words {
+  filter: blur(0);
+}
+
+#game:focus #focus-error {
+  display: none;
+}
+
+div.word {
+  display: inline-block;
+  font-family: "Roboto Mono", monospace;
+  margin: 0 5px;
+}
+
+.letter.correct {
+  color: #fff;
+}
+
+.letter.incorrect {
+  color: #f55;
+}
