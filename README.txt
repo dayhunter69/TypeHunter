@@ -1,0 +1,1 @@
+Custom typing test to increase speed of codng syntax. 
