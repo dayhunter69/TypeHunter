@@ -1,5 +1,3 @@
-console.log("Hello world");
-
 const words =
   "for if else while function return int float double char string class object array list dictionary import from def print input output true false null true false try except catch finally raise throw break continue new delete static final const let var async await promise resolve reject constructor extends implements interface public private protected static final abstract override virtual static_cast dynamic_cast typeof instanceof this super self module package require export global static inline constexpr typedef namespace using template friend struct union enum volatile register asm goto volatile".split(
     " "
@@ -11,7 +9,7 @@ function addClass(el, name) {
   el.className += " " + name;
 }
 function removeClass(el, name) {
-  el.className += el.className.replace(name, "");
+  el.className = el.className.replace(name, "");
 }
 function randomWord() {
   const randomIndex = Math.floor(Math.random() * wordsCount);
@@ -21,7 +19,7 @@ function randomWord() {
 function formatWord(word) {
   return `<div class="word"><span class="letter">${word
     .split("")
-    .join('</span><span class="letter">')}</div></span>`;
+    .join('</span><span class="letter">')}</span></div>`;
 }
 function newGame() {
   document.getElementById("words").innerHTML = "";
@@ -33,7 +31,39 @@ function newGame() {
 }
 
 document.getElementById("game").addEventListener("keyup", (ev) => {
+  key = ev.key;
   console.log(ev.key);
+  const currentLetter = document.querySelector(".letter.current");
+  const currentWord = document.querySelector(".word.current");
+  //and also this
+  const expected = currentLetter?.innerHTML || " ";
+  const isLetter = key.length === 1 && key.match(/[a-z]/i);
+  const isSpace = key === " ";
+  console.log({ key, expected });
+  if (isLetter) {
+    if (currentLetter) {
+      addClass(currentLetter, key === expected ? "correct" : "incorrect");
+      removeClass(currentLetter, "current");
+      //need to understand this
+      if (currentLetter.nextSibling) {
+        addClass(currentLetter.nextSibling, "current");
+      }
+    }
+  }
+  if (isSpace) {
+    if (expected !== " ") {
+      const letterToInvalidate = [
+        ...document.querySelectorAll(".word.current .letter:not(.correct)"),
+      ];
+      letterToInvalidate.forEach((letter) => addClass(letter, "incorrect"));
+    }
+    removeClass(currentWord, "current");
+    addClass(currentWord.nextSibling, "current");
+    if (currentLetter) {
+      removeClass(currentLetter, "current");
+    }
+    addClass(currentWord.nextSibling.firstChild, "current");
+  }
 });
 
 newGame();
