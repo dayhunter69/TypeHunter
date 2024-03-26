@@ -2,11 +2,11 @@ const words =
   "for if else while function return int float double char string class object array list dictionary import from def print input output true false null true false try except catch finally raise throw break continue new delete static final const let var async await promise resolve reject constructor extends implements interface public private protected static final abstract override virtual  typeof instanceof this super self module package require export global static inline constexpr typedef namespace using template friend struct union enum volatile register asm goto volatile".split(
     " "
   );
-
 const wordsCount = words.length;
 const gameTime = 30 * 1000;
 window.timer = null;
 window.gameStart = null;
+window.pauseTime = 0;
 
 function addClass(el, name) {
   el.className += " " + name;
@@ -14,9 +14,10 @@ function addClass(el, name) {
 function removeClass(el, name) {
   el.className = el.className.replace(name, "");
 }
+
 function randomWord() {
-  const randomIndex = Math.floor(Math.random() * wordsCount);
-  return words[randomIndex];
+  const randomIndex = Math.ceil(Math.random() * wordsCount);
+  return words[randomIndex - 1];
 }
 
 function formatWord(word) {
@@ -24,59 +25,61 @@ function formatWord(word) {
     .split("")
     .join('</span><span class="letter">')}</span></div>`;
 }
+
 function newGame() {
   document.getElementById("words").innerHTML = "";
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 200; i++) {
     document.getElementById("words").innerHTML += formatWord(randomWord());
   }
   addClass(document.querySelector(".word"), "current");
   addClass(document.querySelector(".letter"), "current");
+  document.getElementById("info").innerHTML = gameTime / 1000 + "";
   window.timer = null;
 }
 
 function getWpm() {
   const words = [...document.querySelectorAll(".word")];
   const lastTypedWord = document.querySelector(".word.current");
-  const lastTypedWordIndex = words.indexOf(lastTypedWord);
+  const lastTypedWordIndex = words.indexOf(lastTypedWord) + 1;
   const typedWords = words.slice(0, lastTypedWordIndex);
   const correctWords = typedWords.filter((word) => {
-    const letters = [word.children];
+    const letters = [...word.children];
     const incorrectLetters = letters.filter((letter) =>
       letter.className.includes("incorrect")
     );
-    const correctLetters = letters.filter((letter) => {
-      letter.className.includes("correct");
-      return (
-        incorrectLetters.length === 0 ||
-        correctLetters.length === letters.length
-      );
-    });
+    const correctLetters = letters.filter((letter) =>
+      letter.className.includes("correct")
+    );
+    return (
+      incorrectLetters.length === 0 && correctLetters.length === letters.length
+    );
   });
   return (correctWords.length / gameTime) * 60000;
 }
+
 function gameOver() {
   clearInterval(window.timer);
   addClass(document.getElementById("game"), "over");
-  document.getElementById("info").innerHTML = `WPM: ${getWpm()}`;
+  const result = getWpm();
+  document.getElementById("info").innerHTML = `WPM: ${result}`;
 }
 
 document.getElementById("game").addEventListener("keyup", (ev) => {
-  key = ev.key;
-  console.log(ev.key);
-  const currentLetter = document.querySelector(".letter.current");
+  const key = ev.key;
   const currentWord = document.querySelector(".word.current");
-  //and also this
+  const currentLetter = document.querySelector(".letter.current");
   const expected = currentLetter?.innerHTML || " ";
-  const isLetter = key.length === 1 && key.match(/[a-z]/i);
+  const isLetter = key.length === 1 && key !== " ";
   const isSpace = key === " ";
   const isBackspace = key === "Backspace";
   const isFirstLetter = currentLetter === currentWord.firstChild;
-  console.log({ key, expected });
 
   if (document.querySelector("#game.over")) {
     return;
   }
-  //timer
+
+  console.log({ key, expected });
+
   if (!window.timer && isLetter) {
     window.timer = setInterval(() => {
       if (!window.gameStart) {
@@ -85,7 +88,7 @@ document.getElementById("game").addEventListener("keyup", (ev) => {
       const currentTime = new Date().getTime();
       const msPassed = currentTime - window.gameStart;
       const sPassed = Math.round(msPassed / 1000);
-      const sLeft = gameTime / 1000 - sPassed;
+      const sLeft = Math.round(gameTime / 1000 - sPassed);
       if (sLeft <= 0) {
         gameOver();
         return;
@@ -98,7 +101,6 @@ document.getElementById("game").addEventListener("keyup", (ev) => {
     if (currentLetter) {
       addClass(currentLetter, key === expected ? "correct" : "incorrect");
       removeClass(currentLetter, "current");
-      //need to understand this
       if (currentLetter.nextSibling) {
         addClass(currentLetter.nextSibling, "current");
       }
@@ -109,12 +111,15 @@ document.getElementById("game").addEventListener("keyup", (ev) => {
       currentWord.appendChild(incorrectLetter);
     }
   }
+
   if (isSpace) {
     if (expected !== " ") {
-      const letterToInvalidate = [
+      const lettersToInvalidate = [
         ...document.querySelectorAll(".word.current .letter:not(.correct)"),
       ];
-      letterToInvalidate.forEach((letter) => addClass(letter, "incorrect"));
+      lettersToInvalidate.forEach((letter) => {
+        addClass(letter, "incorrect");
+      });
     }
     removeClass(currentWord, "current");
     addClass(currentWord.nextSibling, "current");
@@ -126,7 +131,7 @@ document.getElementById("game").addEventListener("keyup", (ev) => {
 
   if (isBackspace) {
     if (currentLetter && isFirstLetter) {
-      //make previous work current, last letter current
+      // make prev word current, last letter current
       removeClass(currentWord, "current");
       addClass(currentWord.previousSibling, "current");
       removeClass(currentLetter, "current");
@@ -135,6 +140,7 @@ document.getElementById("game").addEventListener("keyup", (ev) => {
       removeClass(currentWord.previousSibling.lastChild, "correct");
     }
     if (currentLetter && !isFirstLetter) {
+      // move back one letter, invalidate letter
       removeClass(currentLetter, "current");
       addClass(currentLetter.previousSibling, "current");
       removeClass(currentLetter.previousSibling, "incorrect");
@@ -142,38 +148,31 @@ document.getElementById("game").addEventListener("keyup", (ev) => {
     }
     if (!currentLetter) {
       addClass(currentWord.lastChild, "current");
-      removeClass(currentWord.lastChild, "correct");
       removeClass(currentWord.lastChild, "incorrect");
+      removeClass(currentWord.lastChild, "correct");
     }
   }
 
-  //move lines / words
-  if (currentWord.getBoundingClientRect().top > 200) {
+  // move lines / words
+  if (currentWord.getBoundingClientRect().top > 250) {
     const words = document.getElementById("words");
     const margin = parseInt(words.style.marginTop || "0px");
     words.style.marginTop = margin - 35 + "px";
   }
 
-  //move curosr
+  // move cursor
   const nextLetter = document.querySelector(".letter.current");
   const nextWord = document.querySelector(".word.current");
   const cursor = document.getElementById("cursor");
-  //refactoring the if else
   cursor.style.top =
-    (nextLetter || nextWord).getBoundingClientRect().top +
-    (nextLetter ? "0" : 8) +
-    "px";
+    (nextLetter || nextWord).getBoundingClientRect().top + 2 + "px";
   cursor.style.left =
     (nextLetter || nextWord).getBoundingClientRect()[
       nextLetter ? "left" : "right"
     ] + "px";
-  // if (nextLetter) {
-  //   cursor.style.top = nextLetter.getBoundingClientRect().top + "px";
-  //   cursor.style.left = nextLetter.getBoundingClientRect().left + "px";
-  // } else {
-  //   cursor.style.top = nextWord.getBoundingClientRect().top + 8 + "px";
-  //   cursor.style.left = nextWord.getBoundingClientRect().right + "px";
-  // }
 });
-
 newGame();
+document.getElementById("newGameBtn").addEventListener("click", () => {
+  gameOver();
+  newGame();
+});
