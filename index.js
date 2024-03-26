@@ -172,7 +172,6 @@ document.getElementById("game").addEventListener("keyup", (ev) => {
     ] + "px";
 });
 newGame();
-document.getElementById("newGameBtn").addEventListener("click", () => {
-  gameOver();
-  newGame();
+document.getElementById("newGameBtn").addEventListener("click", function () {
+  location.reload();
 });
